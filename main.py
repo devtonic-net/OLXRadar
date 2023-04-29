@@ -14,8 +14,8 @@ db = DatabaseManager()
 
 def load_target_urls() -> list:
     """
-    Fetch the list of URLs to monitor fromthe file 'target_urls.txt',
-    which is located in the same directory with the script.
+    Fetch the list of URLs to monitor from the file 'target_urls.txt',
+    which is located in the same directory as the script.
 
     Returns:
         list: list of URLs from which to collect data. If the
