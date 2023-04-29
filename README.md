@@ -1,6 +1,6 @@
 ![OLXRadar](https://i.imgur.com/umVlxwV.jpeg)
 # OLXRadar
-Get notified instantly of new listings on OLX with this Python script that sends alerts via Telegram and email.
+Get notified instantly of new listings on OLX with this Python app that sends alerts via Telegram and email.
 
 ## Prerequisites
 
