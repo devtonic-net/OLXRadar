@@ -14,17 +14,17 @@ db = DatabaseManager()
 
 def load_target_urls() -> list:
     """
-    Încarcă o listă de URL-uri de urmărit dintr-un fișier text denumit
-    "target_urls.txt" și aflat în același director de bază cu scriptul.
+    Fetch the list of URLs to monitor fromthe file 'target_urls.txt',
+    which is located in the same directory with the script.
 
     Returns:
-        list: Lista de URL-uri se unde se vor colecta date. Dacă fișierul
-        nu există, îl creează și returnează o listă goală.
+        list: list of URLs from which to collect data. If the
+        file does not exist, it creates it and returns an empty list.
 
     """
     file_path = os.path.join(BASE_DIR, "target_urls.txt")
-    user_message = f"Fișierul 'target_urls.txt' a fost creat. Trebuie să adaugi în " \
-        + f"el cel puțin un URL pentru a începe monitorizarea. Adaugă un URL/linie."
+    user_message = f"The file 'target_urls.txt' has been created. Add " \
+        + f"in it at least one URL to monitor for new ads. Add 1 URL per line."
     try:
         with open(file_path) as f:
             target_urls = [line.strip() for line in f]
@@ -39,12 +39,13 @@ def load_target_urls() -> list:
 
 def get_new_ads_urls(all_urls: list) -> list:
     """
-    Returnează o listă de URL-uri de anunțuri noi (care nu se găsesc în baza de date). 
-    Args:
-        all_urls (list): Lista de URL-uri care trebuie comparate cu baza de date.
+    Returns a list of new ad URLs (not found in the database). 
 
-    Returnează:
-        new_urls (list): Lista de URL-uri care nu se găsesc în baza de date
+    Args:
+        all_urls (list): list of URLs to be matched against the database.
+
+    Returns:
+        new_urls (list): List of URLs not found in the database.
     """
     new_urls = []
     if all_urls:
@@ -56,13 +57,13 @@ def get_new_ads_urls(all_urls: list) -> list:
 
 def get_new_ads_urls_for_url(target_url: str) -> list:
     """
-    Extrage anunțurile pentru o anumită adresă URL și filtrează anunțurile procesate anterior.
+    Extracts ads for a specific URL and filters out previously processed ads.
 
     Args:
-        target_url (str): Un string reprezintă URL-ul pentru care trebuie să se extragă noi anunțuri.
+        target_url (str): A string representing the URL for which new ads should be retrieved.
 
     Returns:
-        List[str]: O listă de adrese URL reprezentând noile anunțuri preluate de la adresa URL dată.
+        List[str]: A list of URLs representing new ads retrieved from the monitored URL.
     """
 
     try:
@@ -74,31 +75,34 @@ def get_new_ads_urls_for_url(target_url: str) -> list:
 
 
 def main() -> None:
-    """Colectează și procesează anunțurile noi și trimite
-    notificări pe email și Telegram."""
+    """
+    Main function. Collects and processes ads
+    and sends notifications by email and Telegram.
+    """
 
     target_urls = load_target_urls()
     for target_url in target_urls:
         ads_urls = get_new_ads_urls_for_url(target_url)
 
-        # Filtrează anunțurile deja procesate
+        # Filter out the already processed ads
         new_ads_urls = get_new_ads_urls(ads_urls)
         if not new_ads_urls:
             continue
 
-        # Procesează anunțurile în paralel
+        # Process ads in parallel, for increased speed
         with Pool(10) as pool:
             new_ads = pool.map(scraper.get_ad_data, new_ads_urls)
         new_ads = list(filter(None, new_ads))
 
-        message_subject, message_body = Messenger.generate_email_content(
-            target_url, new_ads)
-        Messenger.send_email_message(message_subject, message_body)
-        Messenger.send_telegram_message(message_subject, message_body)
+        if new_ads:
+            message_subject, message_body = Messenger.generate_email_content(
+                target_url, new_ads)
+            Messenger.send_email_message(message_subject, message_body)
+            Messenger.send_telegram_message(message_subject, message_body)
 
         # Adaugă în DB anunțurile procesate
         for url in new_ads_urls:
-            db.add_entry(url)
+            db.add_url(url)
 
 
 if __name__ == "__main__":

@@ -4,13 +4,11 @@ from utils import BASE_DIR
 
 
 class DatabaseManager():
-    """
-    Class responsible for database operations.
-    """
+    """Class responsible for the interactions with the database."""
 
     def __init__(self) -> None:
         """
-        Inițializează un nou obiect Bază de date și creează tabelul 'articles', dacă acesta nu există.
+        Init a new DB object and create the 'ads' table, if it doesn't exist.
         """
         self.DB = os.path.join(BASE_DIR, "database.db")
         self.conn = sqlite3.connect(self.DB)
@@ -27,13 +25,15 @@ class DatabaseManager():
 
     def url_exists(self, url: str) -> bool:
         """
-        Returnează True dacă în baza de date există o intrare cu url-ul specificat, iar în caz contrar, False.
+        Returns True if an entry with the specified url exists
+        in the database, otherwise False.
 
         Args:
-        url (str): url-ul care trebuie verificat.
+            url (str): the url to check.
 
         Returns:
-        bool: True dacă în baza de date există o intrare cu url-ul specificat, altfel False.
+            bool: True if an entry with the specified url exists in
+            the database, otherwise False.
         """
         self.conn = sqlite3.connect(self.DB)
         self.cursor = self.conn.cursor()
@@ -47,18 +47,15 @@ class DatabaseManager():
             return True
         return False
 
-    def add_entry(self, url: str) -> None:
+    def add_url(self, url: str) -> None:
         """
-        Adaugă în baza de date 'articles' o nouă intrare cu url-ul,
-        titlul și descrierea specificate.
+        Adds a new entry with the specified url to the 'ads' table.
 
         Args:
-        url (str): un șir de caractere care reprezintă adresa URL a articolului
-        title (str): un șir de caractere care reprezintă titlul articolului
-        description (str): un șir de caractere care reprezintă descrierea articolului
+            url (str): a string representing the URL of the item.
 
         Returns:
-        None.
+            None
         """
         self.conn = sqlite3.connect(self.DB)
         self.cursor = self.conn.cursor()

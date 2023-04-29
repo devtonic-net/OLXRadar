@@ -9,13 +9,13 @@ BASE_DIR = os.path.realpath(os.path.dirname(__file__))
 
 def get_header() -> dict:
     """
-    Generează un dicționar aleatoriu de antete HTTP.
+    Generates HTTP headers.
 
     Returns:
-        Un dicționar care reprezintă un antet HTTP.
+        dict: A dictionary representing an HTTP header.
 
-    Funcția returnează un dicționar de antet selectat aleatoriu dintr-o
-    listă de antete, fiecare cu alt user-agent.
+    The function returns a randomly selected header dictionary
+    from a list of headers, each with a different user-agent.
     """
     headers = [
         {
@@ -65,28 +65,28 @@ def get_header() -> dict:
 
 def normalize_text(input: str) -> str:
     """
-    Returneaza forma normala (fara diacritice si cu caractere compatibile) a unui string Unicode.
+    Returns the 'normalized' form (with compatible, non-special characters) of a Unicode string.
 
     Args:
-        input (str): Textul care va fi procesat
+        input (str): text to be processed
     Returns:
-        str: Textul in forma normala
+        str: Text in normal form
     """
     return unicodedata.normalize('NFKD', str(input)).encode('ascii', 'ignore').decode('ascii')
 
 
-def extract_search_term(url: str) -> (str | None):
+def extract_search_term(url: str) -> str:
     """
-    Extrage termenul de căutare dintr-un URL OLX.ro dat.
+    Extract the search term from a given OLX.ro URL.
 
     Args:
-        url (str): Un șir de caractere reprezentând URL-ul din care trebuie extras termenul de căutare.
+        url (str): A string representing the URL from which the search term is to be extracted.
 
     Returns:
-        Un șir de caractere reprezentând termenul de căutare extras, sau None,
-        dacă nu a fost găsit niciun termen de căutare în URL.
+        A string representing the search term extracted,
+        or None, if no search term was found in the URL.
     """
-    # Termenul de cautare este precedat de '/q-' si urmat de '/'
+    # In OLX.ro urls, the search term is preceded by '/q-' and followed by '/'.
     match = re.search(r"(?<=(/q-))[\S-]+(?=/)", url, re.IGNORECASE)
     if match:
         query = match.group()

@@ -9,43 +9,63 @@ from utils import get_header
 
 
 class OlxScraper:
-    """Clasa folosită la colectarea datelor de pe OLX România."""
+    """Class used to scrape data from OLX Romania."""
 
     def __init__(self):
-        # self.headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/112.0"}
         self.headers = get_header()
         self.netloc = "www.olx.ro"
         self.schema = "https"
         self.current_page = 1
         self.last_page = None
 
-    def parse_content(self, target_url: str) -> (BeautifulSoup | None):
+    def parse_content(self, target_url: str) -> BeautifulSoup:
         """
-        Procesează conținutul de la un URL dat.
+        Parse content from a given URL.
 
         Args:
-            target_url (str): Un string reprezentând URL-ul ce va fi procesat.
+            target_url (str): A string representing the URL to be processed.
 
         Returns:
-            BeautifulSoup: Un obiect reprezentând conținutul procesat
-            de la URL-ul dat sau None în caz de eroare.
+            BeautifulSoup: An object representing the processed content,
+            or None in case of error.
         """
         try:
             r = requests.get(target_url, headers=self.headers, timeout=60)
             r.raise_for_status()
         except requests.exceptions.RequestException as error:
-            logging.error(f"Eroare de conexiune: {error}")
+            logging.error(f"Connection error: {error}")
         else:
             parsed_content = BeautifulSoup(r.text, "html.parser")
             return parsed_content
 
-    def get_ads(self, parsed_content: BeautifulSoup) -> (ResultSet[Tag] | None):
+    def get_ads(self, parsed_content: BeautifulSoup) -> ResultSet[Tag]:
+        """
+        Returns all ads found on the parsed web page.
+
+        Args:
+            parsed_content (BeautifulSoup): a BeautifulSoup object created as
+            a result of parsing the web page.
+
+        Returns:
+            ResultSet[Tag]: A ResultSet containing all HTML tags that contain ads.
+        """
         if parsed_content is None:
             return None
         ads = parsed_content.select("div.css-1sw7q4x")
         return ads
 
-    def get_last_page(self, parsed_content: BeautifulSoup) -> (int | None):
+    def get_last_page(self, parsed_content: BeautifulSoup) -> int:
+        """
+        Returns the number of the last page available for processing.
+
+        Args:
+            parsed_content (BeautifulSoup): a BeautifulSoup object created
+            as a result of parsing the web page.
+
+        Returns:
+            int: The number of the last page available for parsing. If
+            there is no paging or the parsed object is None, it will return None.
+        """
         if parsed_content is not None:
             pagination_ul = parsed_content.find("ul", class_="pagination-list")
             if pagination_ul is not None:
@@ -56,23 +76,22 @@ class OlxScraper:
 
     def scrape_ads_urls(self, target_url: str) -> list:
         """
-        Colectează URL-urile anunțurilor de pe o pagină OLX. Caută toate URL-urile relevante
-        ale anunțurilor și le adaugă într-o mulțime. Paginile sunt parcurs pe rând,
-        începând cu pagina curentă și până la ultima pagină a anunțurilor.
+        Scrapes the URLs of all valid ads present on an OLX page. Search all relevant
+        URLs of the ads and adds them to a set. Parses all pages, from first to last.
 
         Args:
-            target_url (str): Adresa URL a paginii OLX de la care să înceapă căutarea.
+            target_url (str): URL of the OLX page to start the search from.
 
         Returns:
-            list: O listă de URL-uri relevante ale anunțurilor găsite pe pagină.
+            list: a list of relevant URLs of the ads found on the page.
 
         Raises:
-            ValueError: Dacă adresa URL nu este validă sau nu aparține domeniului specificat.
+            ValueError: If the URL is invalid or does not belong to the specified domain.
         """
         ads_links = set()
         if self.netloc != urlparse(target_url).netloc:
             raise ValueError(
-                f"URL-ul nu este valid! OLXRadar poate procesa doar adrese de pe {self.netloc}.")
+                f"Bad URL! OLXRadar is configured to process {self.netloc} links only.")
         while True:
             url = f"{target_url}/?page={self.current_page}"
             parsed_content = self.parse_content(url)
@@ -98,17 +117,18 @@ class OlxScraper:
 
     def is_relevant_url(self, url: str) -> bool:
         """
-        Determină dacă o anumită adresă URL este relevantă, analizând segmentul query pe care îl conține.
+        Determines whether a particular URL is relevant by analyzing the query segment it contains.
 
         Args:
-            url (str): Un șir de caractere care reprezintă URL-ul a cărui relevanță trebuie verificată.
+            url (str): A string representing the URL whose relevance is to be checked.
 
-        Returnează:
-            bool: 'True', dacă URL-ul este relevant, 'False' dacă nu.
+        Returns:
+            bool: True if the URL is relevant, False if not.
 
-        Segmentele de interogare (cum ar fi "?reason=extended-region") indică faptul că anunțul este
-        adăugat la rezultatele căutării de către OLX în cazul în care nu există suficiente anunțuri
-        disponibile pentru regiunea utilizatorului, deci nu este util (relevant).
+        The query (or search) segments, such as "?reason=extended-region", show that the ad
+        is added to the search results list by OLX when there are not enough ads
+        available for the user's region. Therefore, such a URL is not useful
+        (relevant) for monitoring.
         """
         segments = urlparse(url)
         if segments.query != "":
@@ -117,16 +137,16 @@ class OlxScraper:
 
     def is_internal_url(self, url: str, domain: str) -> bool:
         """
-        Verifică dacă URL-ul are același domeniu cu al paginii din care a fost extras.
+        Checks if the URL has the same domain as the page it was taken from.
 
         Args:
-            url (str): URL-ul care trebuie verificat.
-            domain (str): Domeniul paginii curente.
+            url (str): the URL to check.
+            domain (str): Domain of the current page.
 
         Returns:
-            bool: True dacă URL-ul este o legătură internă, False în caz contrar.
+            bool: True if the URL is an internal link, False otherwise.
         """
-        # URL incepe cu "/"
+        # URL starts with "/"
         if self.is_relative_url(url):
             return True
         parsed_url = urlparse(url)
@@ -136,34 +156,34 @@ class OlxScraper:
 
     def is_relative_url(self, url: str) -> bool:
         """
-        Verifica daca url-ul dat este relativ sau absolut.
+        Check if the given url is relative or absolute.
 
         Args:
-            url (str): Url-ul de verificat.
+            url (str): url to check.
 
         Returns:
-            True, dacă url-ul este relativ, altfel False.
+            True if the url is relative, otherwise False.
         """
 
         parsed_url = urlparse(url)
-        if not parsed_url.netloc:  # nu incepe cu nume de domeniu
+        if not parsed_url.netloc:
             return True
-        if re.search(r"^\/[\w.\-\/]+", url):  # incepe cu "/"
+        if re.search(r"^\/[\w.\-\/]+", url):
             return True
         return False
 
-    def get_ad_data(self, ad_url: str) -> (dict[str] | None):
+    def get_ad_data(self, ad_url: str) -> dict[str]:
         """
-        Extrage informații din pagina HTML a anunțului.
+        Extracts data from the HTML page of the ad.
 
         Args:
-            ad_url (str): URL-ul anunțului.
+            ad_url (str): the URL of the ad.
 
         Returns:
-            dict sau None: Un dicționar care conține informațiile extrase pentru
-            anunțul publicitar sau 'None', dacă lipsesc informațiile necesare.
+            dict or None: A dictionary containing the scraped ad data
+            or None if the required information is missing.
         """
-        logging.info(f"Proceseaza {ad_url}")
+        logging.info(f"Processing {ad_url}")
         content = self.parse_content(ad_url)
 
         if content is None:
