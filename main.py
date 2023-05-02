@@ -100,7 +100,7 @@ def main() -> None:
             Messenger.send_email_message(message_subject, message_body)
             Messenger.send_telegram_message(message_subject, message_body)
 
-        # Adaugă în DB anunțurile procesate
+        # Add the processed ads to database
         for url in new_ads_urls:
             db.add_url(url)
 

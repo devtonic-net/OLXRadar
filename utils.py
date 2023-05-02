@@ -3,7 +3,7 @@ import re
 import unicodedata
 import random
 
-# Cale absolută dir. proiect
+# Absolute path of the project dir
 BASE_DIR = os.path.realpath(os.path.dirname(__file__))
 
 
