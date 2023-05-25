@@ -1,10 +1,11 @@
-import logging
 import os
 import ssl
 import smtplib
 import requests
+import logging
 from dotenv import load_dotenv
 from utils import normalize_text, extract_search_term
+import logging_config
 
 load_dotenv()
 
@@ -91,8 +92,7 @@ class Messenger():
                 server.sendmail(EMAIL_SENDER, EMAIL_RECEIVER, message)
                 server.quit()
         except (smtplib.SMTPAuthenticationError, smtplib.SMTPException) as error:
-            logging.error(
-                f"Error sending email notification: {error}")
+            logging.error(f"Error sending email notification: {error}")
         logging.info("Email notification sent successfully")
 
     @staticmethod
@@ -146,3 +146,31 @@ class Messenger():
                         "Error sending Telegram notification")
             except requests.exceptions.RequestException as error:
                 logging.error(f"Telegram connection error: {error}")
+
+    @staticmethod
+    def _get_telegram_bot_chats() -> list:
+        """
+        Helper function to get the details of all the chats in which
+        a bot is participating.
+
+        Returns:
+            chats (list[dict]): A unique list of dictionaries, each continaing the details of
+            a chat. For a private chat, the details are: 'id', 'type', 'first_name', 'last_name',
+            'username'. For a group chat, the details are: 'id', 'type', 'title',
+            'all_members_are_administrators'. In case of an error, it returns an emtpy list.
+        """
+        endpoint = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/getUpdates"
+        try:
+            response = requests.get(endpoint)
+            response.raise_for_status()
+            data = response.json()
+            results = data.get("result", [])
+            chats = []
+            for result in results:
+                chat = result.get("message", {}).get("chat")
+                if chat not in chats:
+                    chats.append(chat)
+            return chats
+        except requests.exceptions.RequestException as error:
+            logging.error(f"Error getting Telegram bot chat data: {error}")
+            return []
